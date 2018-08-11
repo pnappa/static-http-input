@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/inotify.h>
+#include <sys/wait.h>
 
 #include <unistd.h>
 
@@ -18,68 +19,69 @@
 const char* whitelisted_colors[] = {"red", "blue", "green", "yellow", "purple", "orange"};
 
 bool is_valid_color(const char* col) {
-    for (size_t i = 0; i < sizeof(whitelisted_colors)/sizeof(whitelisted_colors[0]); ++i) {
-        if (strcmp(col, whitelisted_colors[i]) == 0) return true;
-    }
-    return false;
+	for (size_t i = 0; i < sizeof(whitelisted_colors)/sizeof(whitelisted_colors[0]); ++i) {
+		if (strcmp(col, whitelisted_colors[i]) == 0) return true;
+	}
+	return false;
 }
 
 void setcolor(const char* col) {
-    // for security...
-    if (!is_valid_color(col)) return; 
+	// for security...
+	if (!is_valid_color(col)) return; 
 
-
-    // exec in the child process
-    pid_t childpid = fork();
-    if (childpid == 0) {
-        // change the colour & update last modified image
-        execl("/bin/bash", "bash", "./setcolor.sh", col, (char *) 0);
-    }
+	// exec in the child process
+	pid_t childpid = fork();
+	if (childpid == 0) {
+		// change the colour & update last modified image
+		execl("/bin/bash", "bash", "./setcolor.sh", col, (char *) 0);
+	} else {
+		int status;
+		// turns out you have to wait for processes, otherwise it causes zombies
+		int wpid = wait(&status);
+		printf("return value was: %d, should be 0 (child proc: %d)\n", status, wpid);
+	}
 }
 
 int main( )
 {
-    int fd;
-    int wd;
-    char buffer[EVENT_BUF_LEN];
+	int fd;
+	int wd;
+	char buffer[EVENT_BUF_LEN];
 
-    /*creating the INOTIFY instance*/
-    fd = inotify_init();
+	/*creating the INOTIFY instance*/
+	fd = inotify_init();
 
-    /*checking for error*/
-    if ( fd < 0 ) {
-        perror( "inotify_init" );
-    }
+	/*checking for error*/
+	if (fd < 0) {
+		perror( "inotify_init" );
+	}
 
-    /*adding the “/tmp” directory into watch list. Here, the suggestion is to validate the existence of the directory before adding into monitoring list.*/
-    wd = inotify_add_watch( fd, "/home/npa/public_html/wall/files/", IN_ACCESS);
+	wd = inotify_add_watch(fd, "/home/npa/public_html/wall/files/", IN_ACCESS);
 
-    /*read to determine the event change happens on “/tmp” directory. Actually this read blocks until the change event occurs*/ 
+	// loop and detect every change
+	while (true) {
+		int length, i = 0;
 
-    while (true) {
-        int length, i = 0;
+		printf("waiting for file change...\n");
+		length = read(fd, buffer, EVENT_BUF_LEN); 
 
-        printf("waiting for file change...\n");
-        length = read( fd, buffer, EVENT_BUF_LEN ); 
+		/*checking for error*/
+		if ( length < 0 ) {
+			perror( "read" );
+		}  
 
-        /*checking for error*/
-        if ( length < 0 ) {
-            perror( "read" );
-        }  
+		// go through the events
+		while (i < length) {     
+			struct inotify_event *event = (struct inotify_event*) &buffer[i];     
 
-        // go through the events
-        while ( i < length ) {     
-            struct inotify_event *event = ( struct inotify_event * ) &buffer[ i ];     
-
-            if ( event->len ) {
-                printf("setting colour to: %s\n", event->name);
-                setcolor(event->name);
-            }
-            i += EVENT_SIZE + event->len;
-        }
-    }
-    // clean up
-    inotify_rm_watch( fd, wd );
-    close( fd );
-
+			if (event->len) {
+				printf("setting colour to: %s\n", event->name);
+				setcolor(event->name);
+			}
+			i += EVENT_SIZE + event->len;
+		}
+	}
+	// clean up
+	inotify_rm_watch(fd, wd);
+	close(fd);
 }
