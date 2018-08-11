@@ -7,5 +7,8 @@ I use a random get parameter to ensure that results are not cached. **Not sure i
 
 Annoyingly, the file must have at least a single byte in it.
 
+Currently, the working example is in `./rainbowall` [sic]. You'll need to modify the directory in the C file that is being monitored.
+
 # Future:
-Try to find unsuccessful accesses too! I want this to be some method to exfiltrate more data (e.g. access `/yes/now/BrowserFirefox54.11...blahblah`)
+    - Try to find unsuccessful accesses too! I want this to be some method to exfiltrate more data (e.g. access `/yes/now/BrowserFirefox54.11...blahblah`)
+    - Alternatively, support recursive symlinks. This doesn't seem possible (at least on linux).
