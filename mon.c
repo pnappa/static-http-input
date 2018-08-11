@@ -58,7 +58,6 @@ void* worker_thread(void* arg) {
     /*creating the INOTIFY instance*/
     fd = inotify_init();
 
-    /*adding the “/tmp” directory into watch list. Here, the suggestion is to validate the existence of the directory before adding into monitoring list.*/
     wd = inotify_add_watch( fd, td->fname_str, IN_ACCESS );
 
     // wait until we have a file read
@@ -70,7 +69,10 @@ void* worker_thread(void* arg) {
         // cargo cult stuff
         i += EVENT_SIZE + event->len;
 
+        pthread_mutex_lock(&stdout_mutex);
         printf("file %s read!\n", td->fname_str);
+        pthread_mutex_unlock(&stdout_mutex);
+
         // and call the associated function call
         td->fn();
     }
@@ -117,6 +119,7 @@ size_t start_workers() {
     return num_files;
 }
 
+/* For each thread, join them and do some cleanup */
 void stop_workers(size_t num_workers) {
     // join them, and deallloc
     for (size_t i = 0; i < num_workers; ++i) {

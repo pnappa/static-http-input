@@ -5,7 +5,6 @@ How this works is that the program uses inotify, so it watches if the files have
 
 I use a random get parameter to ensure that results are not cached. **Not sure if this works!** (future me note: it does!)
 
-
 Annoyingly, the file must have at least a single byte in it.
 
 # Future:

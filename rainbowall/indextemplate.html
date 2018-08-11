@@ -1,0 +1,44 @@
+<!doctype html>
+
+<html>
+    <head>
+        <title>rainbow wall!</title>
+        <script>
+            var xhttp = new XMLHttpRequest();
+
+            function getRandomStr() {
+                return Math.random().toString(36).substring(2);
+            }
+
+            function setcolour(col) {
+                xhttp.open("GET", "/~npa/wall/files/" + col + "?q="+getRandomStr(), true);
+                xhttp.onreadystatechange = function() {
+                    window.location.reload();
+                };
+                xhttp.send(null);
+            }
+        </script>
+        <link rel="stylesheet" type="text/css" href="style.css?q=YYY">
+    </head>
+
+    <body>
+        <center>
+            <h1 style="color: white; -webkit-text-stroke: 2px black; font-family: Arial Black, Gadget, sans-serif;">Welcome to the wall! :D</h1>
+
+            <div class="lastmod">
+                <p>Last modified:</p>
+                <img src="lastmodified.gif?q=YYY" alt="When the file was last modified"/>
+            </div>
+
+            <button onclick='setcolour("red");'>Set the background to red!</button>
+            <button onclick='setcolour("blue");'>Set the background to blue!</button>
+            <button onclick='setcolour("green");'>Set the background to green!</button>
+            <button onclick='setcolour("yellow");'>Set the background to yellow!</button>
+            <button onclick='setcolour("purple");'>Set the background to purple!</button>
+            <button onclick='setcolour("orange");'>Set the background to orange!</button>
+        </center>
+
+        <footer>Server status: <img src="offline.gif?q=YYY"/></footer>
+    </body>
+
+</html>
